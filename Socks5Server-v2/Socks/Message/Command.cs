@@ -15,6 +15,8 @@ namespace Socks5S.Socks.Message
         public IPAddress DestinationAddress { get; private set; }
         public ushort DestinationPort { get; private set; }
 
+        public bool DnsSuccess { get; private set; }
+
         public bool Parse(System.IO.BinaryReader reader)
         {
             // 1 byte socksVersion, +1 byte command, +1 byte reserved, +1 byte addressType, +{addressType} bytes dst.address, +2 bytes dst.Port
@@ -52,10 +54,22 @@ namespace Socks5S.Socks.Message
                 if (reader.BaseStream.PeekBytes() != domainLength + 2)
                     return false;
                 this.Domain = Encoding.UTF8.GetString(reader.ReadBytes(domainLength));
-                var dnsResults = Dns.GetHostEntry(this.Domain);
-                this.DestinationAddress = dnsResults.AddressList.Where(x => x.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork).FirstOrDefault();
+                
+                try
+                {
+                    IPHostEntry dnsResults = Dns.GetHostEntry(this.Domain);
+                    this.DestinationAddress = dnsResults.AddressList.Where(x => x.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork).FirstOrDefault();
+                    this.DnsSuccess = true;
+                }
+                catch(Exception)
+                { }
+
                 if (this.DestinationAddress == null)
+                {
                     Program.GetInstance().Log.InfoFormat("Domain '{0}' could not be resolved", this.Domain);
+                    this.DestinationAddress = IPAddress.Loopback;
+                    this.DnsSuccess = false;
+                }
             }
 
             this.DestinationPort = (ushort)IPAddress.NetworkToHostOrder(reader.ReadInt16());

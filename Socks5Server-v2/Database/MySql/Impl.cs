@@ -39,6 +39,7 @@ namespace Socks5S.Database.MySql
         /// Lock access to connection pool iteration on GetConnection
         /// </summary>
         private ManualResetEvent _iteratorLock;
+        private object _iteratorAccessLock = new Object();
 
         #endregion
 
@@ -94,21 +95,24 @@ namespace Socks5S.Database.MySql
         {
             return await Task.Run(() =>
             {
-                this._iteratorLock.WaitOne();
-                this._iteratorLock.Reset();
-                while (true)
+                lock (_iteratorAccessLock)
                 {
-                    for (int i = 0; i < this.ConnectionPool.Length; i++)
+                    this._iteratorLock.WaitOne();
+                    this._iteratorLock.Reset();
+                    while (true)
                     {
-                        if (!this.ConnectionPool[i].IsBusy)
+                        for (int i = 0; i < this.ConnectionPool.Length; i++)
                         {
-                            this.ConnectionPool[i].IsBusy = true;
-                            this._iteratorLock.Set();
-                            return this.ConnectionPool[i];
+                            if (!this.ConnectionPool[i].IsBusy)
+                            {
+                                this.ConnectionPool[i].IsBusy = true;
+                                this._iteratorLock.Set();
+                                return this.ConnectionPool[i];
+                            }
                         }
+                        // check in 1 ms again
+                        System.Threading.Thread.Sleep(1);
                     }
-                    // check in 1 ms again
-                    System.Threading.Thread.Sleep(1);
                 }
             });
         }

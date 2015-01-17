@@ -39,7 +39,7 @@ namespace Socks5S.SocksPlugin
         /// IStateDependentHandler.Awaiting implementation for AuthenticationState.Awaiting
         /// </summary>
         /// <returns>True if connection left open, false if not</returns>
-        Task<bool> Plugin.IStateDependentHandler.Awaiting(Client client, Plugin.ISocksMessage message)
+        async Task<bool> Plugin.IStateDependentHandler.Awaiting(Client client, Plugin.ISocksMessage message)
         {
             Awaiting typedMessage = message as Awaiting;
             if (typedMessage.SocksVersion == Socks.Constants.Socks.Version)
@@ -49,13 +49,13 @@ namespace Socks5S.SocksPlugin
                 {
                     client.Data.AuthenticationMethod = Socks.Constants.AuthenticationMethod.UsernamePassword;
                     client.Data.AuthenticationState = Socks.Constants.AuthenticationState.Authenticating;
-                    client.Send(new byte[] { Socks.Constants.Socks.Version, (byte)client.Data.AuthenticationMethod });
-                    return Task.FromResult(true);
+                    await client.Send(new byte[] { Socks.Constants.Socks.Version, (byte)client.Data.AuthenticationMethod });
+                    return true;
                 }
                 else
-                    client.Send(new byte[] { Socks.Constants.Socks.Version, (byte)Socks.Constants.AuthenticationMethod.NoAcceptableMethod });
+                    await client.Send(new byte[] { Socks.Constants.Socks.Version, (byte)Socks.Constants.AuthenticationMethod.NoAcceptableMethod });
             }
-            return Task.FromResult(false);
+            return false;
         }
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace Socks5S.SocksPlugin
                         // 0x00 means success, everything else is failure
                         Program.GetInstance().Log.DebugFormat("Authentication (Method: {0}) successful for {1}: {2}", client.Data.AuthenticationMethod, client.RemoteEndPoint, typedMessage.Username);
                         client.Data.AuthenticationState = Socks.Constants.AuthenticationState.Authenticated;
-                        client.Send(new byte[] { typedMessage.Version, 0x00 });
+                        await client.Send(new byte[] { typedMessage.Version, 0x00 });
                         return true;
                     }
                 }
@@ -85,7 +85,7 @@ namespace Socks5S.SocksPlugin
                 throw new NotImplementedException("AuthenticationMethod " + client.Data.AuthenticationMethod.ToString() + " not implemented yet");
 
             Program.GetInstance().Log.DebugFormat("Authentication (Method: {0}) failed for {1}", client.Data.AuthenticationMethod, client.RemoteEndPoint);
-            client.Send(new byte[] { Socks.Constants.Socks.Version, 0xFF });
+            await client.Send(new byte[] { Socks.Constants.Socks.Version, 0xFF });
             return false;
         }
 
@@ -98,19 +98,20 @@ namespace Socks5S.SocksPlugin
             bool returnData = false;
 
             Socks5S.Socks.Message.Command typedMessage = message as Socks5S.Socks.Message.Command;
+
             if (typedMessage.SocksCommand != Socks.Constants.Command.Connect)
-                Program.GetInstance().Log.Info("NICE");
+                Program.GetInstance().Log.InfoFormat("COMMAND: {0}", typedMessage.SocksCommand);
+
             if (typedMessage.SocksVersion == Socks.Constants.Socks.Version)
             {
-
-                IPEndPoint remoteEndPoint = new IPEndPoint(typedMessage.DestinationAddress, typedMessage.DestinationPort);
 
                 using(MemoryStream responseStream = new MemoryStream())
                 using(BinaryWriter responseWriter = new BinaryWriter(responseStream))
                 {
-                    if(typedMessage.AddressType == Socks.Constants.AddressType.Domain &&
-                        typedMessage.DestinationAddress == null)
+
+                    if (typedMessage.AddressType == Socks.Constants.AddressType.Domain && !typedMessage.DnsSuccess)
                     {
+                        // domain resolve error
                         responseWriter.Write(Socks.Constants.Socks.Version);
                         responseWriter.Write((byte)Socks.Constants.Reply.HostUnreachable);
                         responseWriter.Write((byte)0);
@@ -123,14 +124,38 @@ namespace Socks5S.SocksPlugin
                         byte[] responseHostUnreachableData = responseStream.GetBuffer();
                         Array.Resize(ref responseHostUnreachableData, (int)responseStream.Length);
 
-                        client.Send(responseHostUnreachableData);
+                        await client.Send(responseHostUnreachableData);
                     }
                     else
                     {
+                        if (typedMessage.DestinationAddress == IPAddress.Loopback ||
+                            typedMessage.DestinationAddress == IPAddress.IPv6Loopback)
+                        {
+
+                            // not allowed to access local network
+                            responseWriter.Write(Socks.Constants.Socks.Version);
+                            responseWriter.Write((byte)Socks.Constants.Reply.ConnectionNotAllowedByRuleset);
+                            responseWriter.Write((byte)0);
+                            responseWriter.Write((byte)(typedMessage.AddressType == Socks.Constants.AddressType.Domain ? Socks.Constants.AddressType.IPv4 : typedMessage.AddressType));
+                            responseWriter.Write(typedMessage.DestinationAddress.GetAddressBytes());
+                            responseWriter.Write((short)IPAddress.HostToNetworkOrder(typedMessage.DestinationPort));
+                            responseWriter.Flush();
+
+                            byte[] responseHostUnreachableData = responseStream.GetBuffer();
+                            Array.Resize(ref responseHostUnreachableData, (int)responseStream.Length);
+
+                            await client.Send(responseHostUnreachableData);
+
+                        }
+                    
+                    
+
+                        IPEndPoint remoteEndPoint = new IPEndPoint(typedMessage.DestinationAddress, typedMessage.DestinationPort);
                         if (this._associations[client.Id] == null)
                         {
                             Association.Carrier carrier = null;
 
+                            bool isImplemented = true;
                             try
                             {
                                 if(typedMessage.SocksCommand == Socks.Constants.Command.Connect)
@@ -139,6 +164,9 @@ namespace Socks5S.SocksPlugin
                                     carrier = new Association.Carrier(Socks.Constants.Command.UdpAssociate, remoteEndPoint, ProtocolType.Udp, this._bufferManager[client.Id].Data);
                             }
                             catch(NotImplementedException)
+                            { isImplemented = false; }
+
+                            if(!isImplemented)
                             {
                                 responseWriter.Write(Socks.Constants.Socks.Version);
                                 responseWriter.Write((byte)Socks.Constants.Reply.CommandNotSupported);
@@ -151,7 +179,7 @@ namespace Socks5S.SocksPlugin
                                 byte[] errorResponse = responseStream.GetBuffer();
                                 Array.Resize(ref errorResponse, (int)responseStream.Length);
 
-                                client.Send(errorResponse);
+                                await client.Send(errorResponse);
                             }
 
                             // terminate the function on catch, can't return asynchronous on catch
@@ -170,11 +198,11 @@ namespace Socks5S.SocksPlugin
                                 connectSuccess = true;
                                 Program.GetInstance().Log.DebugFormat("Client {0} opened connection on {1} successfully", client.RemoteEndPoint, remoteEndPoint);
                             };
-                            carrier.Data.Client.OnClientDataReceived += (s, e) =>
+                            carrier.Data.Client.OnClientDataReceived += async (s, e) =>
                             {
                                 carrier.WiredRx += e.Data.Length;
                                 //Program.GetInstance().Log.DebugFormat("Recv: {0}", BitConverter.ToString(e.Data));
-                                client.Send(e.Data);
+                                await client.Send(e.Data);
                             };
                             this._associations[client.Id] = carrier;
 
@@ -201,7 +229,7 @@ namespace Socks5S.SocksPlugin
                             Array.Resize(ref responseCommand, (int)responseStream.Length);
 
                             client.Data.AuthenticationState = Socks.Constants.AuthenticationState.Transmitting;
-                            client.Send(responseCommand);
+                            await client.Send(responseCommand);
                             returnData = connectSuccess;
                         }
                         else
@@ -233,15 +261,15 @@ namespace Socks5S.SocksPlugin
         /// IStateDependentHandler.Transmission implementation for AuthenticationState.Transmitting
         /// </summary>
         /// <returns>True if connection left open, false if not</returns>
-        Task<bool> Plugin.IStateDependentHandler.Transmission(Client client, byte[] message)
+        async Task<bool> Plugin.IStateDependentHandler.Transmission(Client client, byte[] message)
         {
             Association.Carrier userCarrier = this._associations[client.Id];
             if (userCarrier != null)
             {
-                userCarrier.Transmission(message);
-                return Task.FromResult(true);
+                await userCarrier.Transmission(message);
+                return true;
             }
-            return Task.FromResult(false);
+            return false;
         }
 
         #endregion

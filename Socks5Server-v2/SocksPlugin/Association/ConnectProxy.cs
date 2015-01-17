@@ -21,7 +21,7 @@ namespace Socks5S.SocksPlugin.Association
 
         public ConnectProxy(IPEndPoint remoteEndPoint, ProtocolType protocol, byte[] assignedBuffer)
         {
-            this.Client = new Client(remoteEndPoint, protocol, assignedBuffer);
+            this.Client = new Client(remoteEndPoint, protocol, assignedBuffer, ThrottleMode.Upload);
         }
 
         #endregion

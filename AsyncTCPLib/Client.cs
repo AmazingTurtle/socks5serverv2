@@ -20,6 +20,11 @@ namespace AsyncTCPLib
         private byte[] buffer;
         private EndPoint _receiveEndPoint;
 
+        // speed throttle
+        public Throttle Download { get; private set; }
+        public Throttle Upload { get; private set; }
+        public ThrottleMode @ThrottleMode { get; private set; }
+
         #endregion
 
         #region Constructor, Functions
@@ -29,7 +34,7 @@ namespace AsyncTCPLib
         /// </summary>
         /// <param name="remoteEndPoint">(Default) remote endpoint to connect or send data to</param>
         /// <param name="protocol">TCP or UDP protocol for client socket supported</param>
-        public Client(IPEndPoint remoteEndPoint, ProtocolType protocol)
+        public Client(IPEndPoint remoteEndPoint, ProtocolType protocol, ThrottleMode mode = ThrottleMode.NoThrottle)
         {
             if (protocol == ProtocolType.Tcp)
                 this.Socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -42,6 +47,10 @@ namespace AsyncTCPLib
             this._disconnectLock = new Object();
             this.buffer = new byte[8192];
 
+            this.Download = new Throttle(); // 100 kbsp
+            this.Upload = new Throttle();
+            this.ThrottleMode = mode;
+
             this.OnClientConnected = (s, e) => { };
             this.OnClientDisconnected = (s, e) => { };
             this.OnClientDataReceived = (s, e) => { };
@@ -52,7 +61,7 @@ namespace AsyncTCPLib
         /// </summary>
         /// <param name="remoteEndPoint">(Default) remote endpoint to connect or send data to</param>
         /// <param name="protocol">TCP or UDP protocol for client socket supported</param>
-        public Client(IPEndPoint remoteEndPoint, ProtocolType protocol, byte[] assignedBuffer)
+        public Client(IPEndPoint remoteEndPoint, ProtocolType protocol, byte[] assignedBuffer, ThrottleMode mode = ThrottleMode.NoThrottle)
         {
             if (protocol == ProtocolType.Tcp)
                 this.Socket = new Socket(remoteEndPoint.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -64,6 +73,10 @@ namespace AsyncTCPLib
             this.RemoteEndPoint = remoteEndPoint;
             this._disconnectLock = new Object();
             this.buffer = assignedBuffer;
+
+            this.Download = new Throttle(); // 100 kbsp
+            this.Upload = new Throttle();
+            this.ThrottleMode = mode;
 
             this.OnClientConnected = (s, e) => { };
             this.OnClientDisconnected = (s, e) => { };
@@ -152,12 +165,21 @@ namespace AsyncTCPLib
         /// Send data to the remote host, if connected
         /// </summary>
         /// <param name="data">Data to be sent</param>
-        public void Send(byte[] data)
+        public async Task Send(byte[] data)
         {
             if (this.IsConnected)
             {
                 try
                 {
+                    if (this.ThrottleMode.HasFlag(ThrottleMode.Download))
+                    {
+                        int throttleTime = this.Download.ThrottleTime(data.Length);
+                        if (throttleTime > 0)
+                        {
+                            await Task.Delay(throttleTime);
+                            Console.WriteLine("Throttling download: {0}", throttleTime);
+                        }
+                    }
                     this.Socket.Send(data, 0, data.Length, SocketFlags.None);
                 }
                 catch { this.Disconnect(); }
@@ -169,8 +191,17 @@ namespace AsyncTCPLib
         /// </summary>
         /// <param name="data">Data to be sent</param>
         /// <param name="remoteEndPoint">Target host to send data to</param>
-        public void SendTo(byte[] data, IPEndPoint remoteEndPoint)
+        public async Task SendTo(byte[] data, IPEndPoint remoteEndPoint)
         {
+            if (this.ThrottleMode.HasFlag(ThrottleMode.Download))
+            {
+                int throttleTime = this.Download.ThrottleTime(data.Length);
+                if (throttleTime > 0)
+                {
+                    await Task.Delay(throttleTime);
+                    Console.WriteLine("Throttling download: {0}", throttleTime);
+                }
+            }
             this.Socket.SendTo(data, 0, data.Length, SocketFlags.None, remoteEndPoint);
         }
 
@@ -179,7 +210,7 @@ namespace AsyncTCPLib
         /// <summary>
         /// Callback for asynchronous BeginReceive operation on Client socket
         /// </summary>
-        private void _IReceiveCallback(IAsyncResult ar)
+        private async void _IReceiveCallback(IAsyncResult ar)
         {
             int bufferSize = 0;
             try
@@ -197,7 +228,19 @@ namespace AsyncTCPLib
                     this.OnClientDataReceived(this, new OnClientDataReceivedEventArgs<Client>(this, recv, this.RemoteEndPoint));
                 // if we're still connected afterwards
                 if (this.IsConnected)
+                {
+                    if (this.ThrottleMode.HasFlag(ThrottleMode.Upload))
+                    {
+                        // throttle
+                        int throttleTime = this.Upload.ThrottleTime(bufferSize);
+                        if (throttleTime > 0)
+                        {
+                            await Task.Delay(throttleTime);
+                            Console.WriteLine("Throttling upload: {0}", throttleTime);
+                        }
+                    }
                     this.Begin();
+                }
             }
             else
                 this.Disconnect();
@@ -206,7 +249,7 @@ namespace AsyncTCPLib
         /// <summary>
         /// Callback for asynchronous BeginReceiveFrom operation on Client socket
         /// </summary>
-        private void _IReceiveUDPCallback(IAsyncResult ar)
+        private async void _IReceiveUDPCallback(IAsyncResult ar)
         {
             int bufferSize = 0;
             try
@@ -224,7 +267,19 @@ namespace AsyncTCPLib
                     this.OnClientDataReceived(this, new OnClientDataReceivedEventArgs<Client>(this, recv, (IPEndPoint)this._receiveEndPoint));
                 // if we're still connected afterwards
                 if (this.IsConnected)
+                {
+                    if (this.ThrottleMode.HasFlag(ThrottleMode.Upload))
+                    {
+                        // throttle
+                        int throttleTime = this.Upload.ThrottleTime(bufferSize);
+                        if (throttleTime > 0)
+                        {
+                            await Task.Delay(throttleTime);
+                            Console.WriteLine("Throttling upload: {0}", throttleTime);
+                        }
+                    }
                     this.Begin();
+                }
             }
             else
                 this.Disconnect();
@@ -241,6 +296,7 @@ namespace AsyncTCPLib
         #endregion
 
         #endregion
+
 
     }
 }

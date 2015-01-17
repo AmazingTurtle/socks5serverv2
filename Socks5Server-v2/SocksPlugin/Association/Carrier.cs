@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace Socks5S.SocksPlugin.Association
 {
@@ -50,13 +51,13 @@ namespace Socks5S.SocksPlugin.Association
         /// Transmission for proxy sockeet from client socket
         /// </summary>
         /// <param name="data">Data from client socket to proxy socket</param>
-        public void Transmission(byte[] data)
+        public async Task Transmission(byte[] data)
         {
             if(this.Command == Socks.Constants.Command.Connect)
             {
                 ConnectProxy userData = (ConnectProxy)this.Data;
                 if (userData.Client.IsConnected)
-                    userData.Client.Send(data);
+                    await userData.Client.Send(data);
                 else
                     return;
             }

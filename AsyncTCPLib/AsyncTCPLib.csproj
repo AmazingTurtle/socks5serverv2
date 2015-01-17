@@ -41,6 +41,8 @@
   <ItemGroup>
     <Compile Include="Server.cs" />
     <Compile Include="Client.cs" />
+    <Compile Include="Throttle.cs" />
+    <Compile Include="ThrottleMode.cs" />
     <Compile Include="VirtualClient.cs" />
     <Compile Include="BufferManager.cs" />
     <Compile Include="Events.cs" />

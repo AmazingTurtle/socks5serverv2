@@ -165,6 +165,7 @@ namespace Socks5S
         /// </summary>
         private void OnClientConected(object sender, OnClientConnectedEventArgs<Socks.Client> e)
         {
+            //e.Client.Download.SetMaximumBytesPerSecond(1024);
             //this.Log.DebugFormat("Connected {0}", e.Client.RemoteEndPoint);
         }
 

@@ -41,7 +41,7 @@ namespace Socks5S.SocksPlugin
             Association.Carrier userCarrier = this._associations[e.Client.Id];
             if (userCarrier != null)
             {
-                long accountId = Program.GetInstance().Server.Clients[e.Client.Id].Data.AccountId;
+                long accountId = Program.GetInstance().Server.Clients[e.Client.Id].Data.AuthenticationInfo.Id;
                 if (userCarrier.Command == Socks.Constants.Command.Connect)
                 {
                     Association.ConnectProxy proxy = (Association.ConnectProxy)userCarrier.Data;

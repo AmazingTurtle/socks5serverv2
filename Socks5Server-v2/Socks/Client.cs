@@ -11,7 +11,7 @@ namespace Socks5S.Socks
         public readonly ClientData Data;
 
         public Client(Socket client, byte[] assignedMemory, int id)
-            : base(client, assignedMemory, id)
+            : base(client, assignedMemory, id, ThrottleMode.Download)
         {
             this.Data = new ClientData(this);
         }

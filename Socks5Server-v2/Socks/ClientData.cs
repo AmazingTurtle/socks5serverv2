@@ -40,6 +40,7 @@ namespace Socks5S.Socks
         /// <returns>True if authentication was successful, false if not</returns>
         public async Task<bool> Authenticate(string username, string password)
         {
+            
             if (this.AuthenticationInfo.Success)
                 return false;
             this.AuthenticationInfo = await Program.GetInstance().Database.Authenticate(username, password);

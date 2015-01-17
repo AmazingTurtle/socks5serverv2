@@ -20,6 +20,11 @@ namespace AsyncTCPLib
         private byte[] buffer;
         public int Id { get; private set; }
 
+        // speed throttle
+        public Throttle Download { get; private set; }
+        public Throttle Upload { get; private set; }
+        public ThrottleMode @ThrottleMode { get; private set; }
+
         #endregion
 
         #region Constructor, Functions
@@ -30,7 +35,7 @@ namespace AsyncTCPLib
         /// <param name="client"><see cref="System.Net.Sockets.Socket"/> of VirtualClient</param>
         /// <param name="assignedMemory">Assigned memory for overlapped IO events</param>
         /// <param name="id">Client ID</param>
-        public VirtualClient(Socket client, byte[] assignedMemory, int id)
+        public VirtualClient(Socket client, byte[] assignedMemory, int id, ThrottleMode mode = AsyncTCPLib.ThrottleMode.NoThrottle)
         {
             this.Socket = client;
             this.buffer = assignedMemory;
@@ -39,6 +44,10 @@ namespace AsyncTCPLib
             this._disconnectLock = new Object();
             this.IsConnected = true;
             this.RemoteEndPoint = (IPEndPoint)this.Socket.RemoteEndPoint;
+
+            this.Download = new Throttle(); // 100 kbsp
+            this.Upload = new Throttle();
+            this.ThrottleMode = mode;
 
             this.OnClientDisconnected = (s, e) => { };
             this.OnClientDataReceived = (s, e) => { };
@@ -86,12 +95,21 @@ namespace AsyncTCPLib
         /// Send data to the remote client, if connected
         /// </summary>
         /// <param name="data">Data to be sent</param>
-        public void Send(byte[] data)
+        public async Task Send(byte[] data)
         {
             if (this.IsConnected)
             {
                 try
                 {
+                    if (this.ThrottleMode.HasFlag(ThrottleMode.Download))
+                    {
+                        int throttleTime = this.Download.ThrottleTime(data.Length);
+                        if (throttleTime > 0)
+                        {
+                            await Task.Delay(throttleTime);
+                            Console.WriteLine("Throttling download: {0}", throttleTime);
+                        }
+                    }
                     this.Socket.Send(data, 0, data.Length, SocketFlags.None);
                 }
                 catch { this.Disconnect(); }
@@ -103,7 +121,7 @@ namespace AsyncTCPLib
         /// <summary>
         /// Callback for asynchronous BeginReceive operation on Client socket
         /// </summary>
-        private void _IReceiveCallback(IAsyncResult ar)
+        private async void _IReceiveCallback(IAsyncResult ar)
         {
             int bufferSize = 0;
             try
@@ -121,7 +139,19 @@ namespace AsyncTCPLib
                     this.OnClientDataReceived(this, new OnClientDataReceivedEventArgs<VirtualClient>(this, recv, this.RemoteEndPoint));
                 // if we're still connected afterwards
                 if (this.IsConnected)
+                {
+                    if (this.ThrottleMode.HasFlag(ThrottleMode.Upload))
+                    {
+                        // throttle
+                        int throttleTime = this.Upload.ThrottleTime(bufferSize);
+                        if (throttleTime > 0)
+                        {
+                            await Task.Delay(throttleTime);
+                            Console.WriteLine("Throttling upload: {0}", throttleTime);
+                        }
+                    }
                     this.Begin();
+                }
             }
             else
                 this.Disconnect();

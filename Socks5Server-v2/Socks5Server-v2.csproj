@@ -112,6 +112,7 @@
     <Compile Include="Socks\Message\Command.cs" />
     <Compile Include="SocksPlugin\SocksPlugin.cs" />
     <Compile Include="SocksPlugin\StateDependentHandler.cs" />
+    <Compile Include="Vendor\ThrottledStream.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
