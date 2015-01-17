@@ -1,4 +1,4 @@
-# Socks 5 server implementation in C\#
+# Socks 5 server implementation in CSharp
 ##### RFC reference: https://www.ietf.org/rfc/rfc1928.txt
 
 Functional working socks 5 server written in C#. Supports both IPv4 and IPv6.
