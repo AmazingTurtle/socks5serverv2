@@ -1,0 +1,151 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{3B86669E-D892-4585-883E-FC7B18504ABD}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Socks5S</RootNamespace>
+    <AssemblyName>Socks5Server-v2</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="MySql.Data">
+      <HintPath>..\packages\MySql.Data.6.9.3\lib\net45\MySql.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CompileVars.cs" />
+    <Compile Include="Configuration\Configuration.cs" />
+    <Compile Include="Configuration\Memory.cs" />
+    <Compile Include="Configuration\Database.cs" />
+    <Compile Include="Configuration\Server.cs" />
+    <Compile Include="Database\MySql\CommandWrapper.cs" />
+    <Compile Include="Database\MySql\Impl.cs" />
+    <Compile Include="Database\MySql\Transaction.cs" />
+    <Compile Include="Database\MySql\VirtualConnection.cs" />
+    <Compile Include="Extension.cs" />
+    <Compile Include="MappedConfiguration.cs" />
+    <Compile Include="Plugin\AuthenticationInformation.cs" />
+    <Compile Include="Plugin\Default\AssemblyPluginLoader.cs" />
+    <Compile Include="Plugin\Default\FilePluginLoader.cs" />
+    <Compile Include="Plugin\IDatabase.cs" />
+    <Compile Include="Plugin\IDatabaseConnection.cs" />
+    <Compile Include="Plugin\IDatabaseTransaction.cs" />
+    <Compile Include="Plugin\IPlugin.cs" />
+    <Compile Include="Plugin\IPluginLoader.cs" />
+    <Compile Include="Plugin\IRawHandler.cs" />
+    <Compile Include="Plugin\ISocksMessage.cs" />
+    <Compile Include="Plugin\ISocksMessageFactory.cs" />
+    <Compile Include="Plugin\IStateDependentHandler.cs" />
+    <Compile Include="Plugin\SubscriptionType.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SocksPlugin\Association\ConnectProxy.cs" />
+    <Compile Include="SocksPlugin\Association\Carrier.cs" />
+    <Compile Include="SocksPlugin\Association\ICarrierData.cs" />
+    <Compile Include="SocksPlugin\Association\UdpProxy.cs" />
+    <Compile Include="SocksPlugin\Commit\Command.cs" />
+    <Compile Include="SocksPlugin\Commit\Info.cs" />
+    <Compile Include="SocksPlugin\Commit\Stats.cs" />
+    <Compile Include="SocksPlugin\Config\Restriction.cs" />
+    <Compile Include="SocksPlugin\Config\Socks.cs" />
+    <Compile Include="SocksPlugin\RawHandler.cs" />
+    <Compile Include="Socks\Client.cs" />
+    <Compile Include="Socks\ClientData.cs" />
+    <Compile Include="Socks\Constants\AddressType.cs" />
+    <Compile Include="Socks\Constants\AuthenticationMethod.cs" />
+    <Compile Include="Socks\Constants\AuthenticationState.cs" />
+    <Compile Include="Socks\Constants\Command.cs" />
+    <Compile Include="Socks\Constants\Reply.cs" />
+    <Compile Include="Socks\Constants\Socks.cs" />
+    <Compile Include="Socks\SocksMessageFactory.cs" />
+    <Compile Include="Socks\Message\Authentication\UsernamePassword.cs" />
+    <Compile Include="Socks\Message\Awaiting.cs" />
+    <Compile Include="Socks\Message\Command.cs" />
+    <Compile Include="SocksPlugin\SocksPlugin.cs" />
+    <Compile Include="SocksPlugin\StateDependentHandler.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AsyncTCPLib\AsyncTCPLib.csproj">
+      <Project>{e67738c5-8554-4f51-9f65-73e73f14bbc7}</Project>
+      <Name>AsyncTCPLib</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.5">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.5 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

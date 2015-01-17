@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Socks5Server-v2", "Socks5Server-v2\Socks5Server-v2.csproj", "{3B86669E-D892-4585-883E-FC7B18504ABD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncTCPLib", "AsyncTCPLib\AsyncTCPLib.csproj", "{E67738C5-8554-4F51-9F65-73E73F14BBC7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3B86669E-D892-4585-883E-FC7B18504ABD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B86669E-D892-4585-883E-FC7B18504ABD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B86669E-D892-4585-883E-FC7B18504ABD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B86669E-D892-4585-883E-FC7B18504ABD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E67738C5-8554-4F51-9F65-73E73F14BBC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E67738C5-8554-4F51-9F65-73E73F14BBC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E67738C5-8554-4F51-9F65-73E73F14BBC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E67738C5-8554-4F51-9F65-73E73F14BBC7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
