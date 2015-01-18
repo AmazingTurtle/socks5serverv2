@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Configuration>
+	<Server Address="127.0.0.1" Port="1337" ClientLimit="256" /> <!-- (ipv4-address) string, ushort, int -->
+	<Memory ClientDataSize="65565" /> <!-- int, int -->
+	<Database Driver="mysql"> <!-- (driver-name) string -->
+		<Server Host="127.0.0.1" Port="3306" /> <!-- (ipv4-address) string, ushort -->
+		<Login Username="root" Password="" /> <!-- string, string -->
+		<Config DatabaseName="socks5" PoolSize="8" /> <!-- string, byte -->
+	</Database>
+	<PluginDirectory>./plugins</PluginDirectory>
+</Configuration>

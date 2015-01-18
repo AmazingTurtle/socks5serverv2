@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<SocksPlugin>
+	<ProxyDataSize>65565</ProxyDataSize><!-- int, number of reserved bytes for asynchronous receive operation on a socket -->
+	<Restriction AllowIPv6="true" AllowRemoteDNS="true" /><!-- bool, enable IPv6 support or not; bool, allow remote dns resolve or not -->
+</SocksPlugin>
